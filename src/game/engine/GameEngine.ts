@@ -523,7 +523,10 @@ export class GameEngine {
         if (this.bug2ShieldCollected && !this.player.shieldActive && this.player.health > 0) { this.verifyingBounty = null; return { bountyId, success: true }; }
         break;
       case 'boss-buffering':
-        if (this.boss && this.boss.phase === 'active') { this.verifyingBounty = null; return { bountyId, success: true }; }
+        if (this.boss && (this.boss.phase === 'defeated' || !this.boss.active)) {
+          this.verifyingBounty = null;
+          return { bountyId, success: true };
+        }
         break;
     }
     return null;
