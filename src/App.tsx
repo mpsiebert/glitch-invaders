@@ -1,6 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import * as Sentry from '@sentry/react';
 import { GameStateProvider, useGameState } from './state/GameStateContext';
+import { ThemeProvider } from './theme/ThemeContext';
+import { ThemeToggle } from './theme/ThemeToggle';
 import { InactivityMonitor } from './state/InactivityMonitor';
 import { WelcomeScreen } from './screens/WelcomeScreen';
 import { GameScreen } from './screens/GameScreen';
@@ -23,6 +25,11 @@ function AppContent() {
 
   return (
     <div className="arcade-cabinet">
+      {/* Theme Toggle at Upper Right */}
+      <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 90 }}>
+        <ThemeToggle />
+      </div>
+
       {screen === 'welcome' && <WelcomeScreen />}
       {screen === 'game' && <GameScreen />}
       {screen === 'gameover' && <GameOverScreen />}
@@ -51,9 +58,11 @@ function ErrorFallback({ error, resetError }: { error: unknown; resetError: () =
 export function App() {
   return (
     <Sentry.ErrorBoundary fallback={({ error, resetError }) => <ErrorFallback error={error} resetError={resetError} />}>
-      <GameStateProvider>
-        <AppContent />
-      </GameStateProvider>
+      <ThemeProvider>
+        <GameStateProvider>
+          <AppContent />
+        </GameStateProvider>
+      </ThemeProvider>
     </Sentry.ErrorBoundary>
   );
 }

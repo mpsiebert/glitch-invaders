@@ -90,6 +90,153 @@
   outline-offset: 2px;
 }
 
+/* Theme Toggle Button Styles */
+.theme-toggle-container {
+  background: #111118; border: 2px solid var(--color-border);
+}
+.theme-toggle-btn {
+  font-family: var(--font-pixel); font-size: 9px; padding: 6px 12px; border: none;
+  background: transparent; color: #888; cursor: pointer; border-radius: 3px;
+  transition: all 0.15s ease;
+}
+.theme-toggle-btn.active {
+  background: var(--color-border); color: var(--color-bg); font-weight: bold;
+}
+.theme-toggle-btn:focus-visible {
+  outline: 2px solid var(--color-cyan);
+}
+
+/* ════════════════════════════════════════════════════════════
+   MLH MODE — NEO-BRUTALIST STYLING OVERRIDES
+   ════════════════════════════════════════════════════════════ */
+[data-theme="mlh"] .theme-toggle-container {
+  background: #ffffff; border: 3px solid #111118; box-shadow: 3px 3px 0px #111118;
+}
+[data-theme="mlh"] .theme-toggle-btn {
+  color: #111118; font-family: var(--font-pixel); font-size: 9px; font-weight: bold;
+}
+[data-theme="mlh"] .theme-toggle-btn.active {
+  background: #1b40b8; color: #ffffff; box-shadow: 2px 2px 0px #111118;
+}
+
+[data-theme="mlh"] .btn {
+  border: 3px solid #111118; background: #ffffff; color: #111118;
+  box-shadow: 3px 3px 0px #111118; border-radius: 2px; font-weight: 800;
+  text-shadow: none;
+}
+[data-theme="mlh"] .btn:hover {
+  background: #f0eae1; box-shadow: 4px 4px 0px #111118; transform: translate(-1px, -1px);
+}
+[data-theme="mlh"] .btn:active {
+  transform: translate(2px, 2px); box-shadow: 1px 1px 0px #111118; background: #e0d8cc;
+}
+
+[data-theme="mlh"] .btn-primary {
+  background: #1b40b8; color: #ffffff; border-color: #111118; box-shadow: 4px 4px 0px #111118;
+}
+[data-theme="mlh"] .btn-primary:hover {
+  background: #234ad9; box-shadow: 5px 5px 0px #111118;
+}
+
+[data-theme="mlh"] .btn-success {
+  background: #0f8a44; color: #ffffff; border-color: #111118; box-shadow: 4px 4px 0px #111118;
+}
+[data-theme="mlh"] .btn-success:hover {
+  background: #12a250; box-shadow: 5px 5px 0px #111118;
+}
+
+[data-theme="mlh"] .btn-warning {
+  background: #ffc72c; color: #111118; border-color: #111118; box-shadow: 4px 4px 0px #111118;
+}
+[data-theme="mlh"] .btn-warning:hover {
+  background: #ffd354; box-shadow: 5px 5px 0px #111118;
+}
+
+[data-theme="mlh"] .btn-danger {
+  background: #d92b2b; color: #ffffff; border-color: #111118; box-shadow: 4px 4px 0px #111118;
+}
+[data-theme="mlh"] .btn-danger:hover {
+  background: #e04343; box-shadow: 5px 5px 0px #111118;
+}
+
+[data-theme="mlh"] .panel {
+  background: #ffffff; border: 3px solid #111118; border-radius: 4px;
+  box-shadow: 5px 5px 0px #111118; color: #111118;
+}
+[data-theme="mlh"] .panel-magenta { border-color: #111118; box-shadow: 5px 5px 0px #d92b2b; }
+[data-theme="mlh"] .panel-amber { border-color: #111118; box-shadow: 5px 5px 0px #f5a623; }
+[data-theme="mlh"] .panel-green { border-color: #111118; box-shadow: 5px 5px 0px #0f8a44; }
+
+[data-theme="mlh"] .code-snippet {
+  background: #f0f0f5; border: 2px solid #111118; color: #111118; font-weight: 600;
+}
+
+[data-theme="mlh"] .input {
+  background: #ffffff; border: 3px solid #111118; color: #111118; box-shadow: 3px 3px 0px #111118;
+}
+[data-theme="mlh"] .input:focus { border-color: #1b40b8; box-shadow: 4px 4px 0px #1b40b8; }
+
+[data-theme="mlh"] .badge {
+  border: 2px solid #111118; font-weight: bold; border-radius: 2px; box-shadow: 2px 2px 0px #111118;
+}
+[data-theme="mlh"] .badge-demo { background: #ffc72c; color: #111118; }
+[data-theme="mlh"] .badge-live { background: #0f8a44; color: #ffffff; }
+[data-theme="mlh"] .badge-optional { background: #d92b2b; color: #ffffff; }
+
+[data-theme="mlh"] .repair-card {
+  background: #ffffff; border: 3px solid #111118; box-shadow: 3px 3px 0px #111118; border-radius: 4px;
+}
+[data-theme="mlh"] .repair-card:hover:not(:disabled) {
+  border-color: #111118; box-shadow: 5px 5px 0px #1b40b8; transform: translate(-1px, -1px);
+}
+[data-theme="mlh"] .repair-card.applying {
+  border-color: #111118; background: #fff8e6; box-shadow: 3px 3px 0px #ffc72c;
+}
+[data-theme="mlh"] .repair-card.incorrect {
+  border-color: #111118; background: #fff0f0; box-shadow: 4px 4px 0px #d92b2b;
+}
+[data-theme="mlh"] .repair-card.correct {
+  border-color: #111118; background: #f0fff5; box-shadow: 5px 5px 0px #0f8a44;
+}
+
+[data-theme="mlh"] .repair-feedback-box.incorrect {
+  background: #ffe6e6; border: 2px solid #d92b2b; color: #900;
+}
+[data-theme="mlh"] .repair-feedback-box.correct {
+  background: #e6f9ed; border: 2px solid #0f8a44; color: #0f8a44;
+}
+
+[data-theme="mlh"] .hint-reveal {
+  background: #fff8e6; border: 2px solid #111118; color: #111118; box-shadow: 3px 3px 0px #f5a623;
+}
+
+[data-theme="mlh"] .bounty-dot {
+  border: 2px solid #111118; border-radius: 3px;
+}
+[data-theme="mlh"] .bounty-dot.locked { background: #e0d8cc; }
+[data-theme="mlh"] .bounty-dot.active { background: #ffc72c; box-shadow: 2px 2px 0px #111118; }
+[data-theme="mlh"] .bounty-dot.completed { background: #0f8a44; box-shadow: 2px 2px 0px #111118; }
+
+[data-theme="mlh"] .overlay {
+  background: rgba(17, 17, 24, 0.7);
+}
+
+/* Neo-brutalist Touch Controls in MLH Mode */
+[data-theme="mlh"] .control-btn {
+  border: 3px solid #111118; background: #ffffff; color: #111118;
+  box-shadow: 3px 3px 0px #111118; border-radius: 4px; font-weight: bold;
+}
+[data-theme="mlh"] .control-btn:active, [data-theme="mlh"] .control-btn.pressed {
+  transform: translate(2px, 2px); box-shadow: 1px 1px 0px #111118; background: #f0eae1;
+}
+[data-theme="mlh"] .control-btn-fire {
+  border: 3px solid #111118; background: #d92b2b; color: #ffffff;
+  box-shadow: 4px 4px 0px #111118; border-radius: 6px;
+}
+[data-theme="mlh"] .control-btn-fire:active, [data-theme="mlh"] .control-btn-fire.pressed {
+  transform: translate(2px, 2px); box-shadow: 1px 1px 0px #111118; background: #b81d1d;
+}
+
 @media (max-width: 600px) {
   .arcade-cabinet { padding: 8px; }
   .panel { padding: 16px; max-width: 100% !important; }
