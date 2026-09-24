@@ -27,6 +27,10 @@ function AppContent() {
       {screen === 'game' && <GameScreen />}
       {screen === 'gameover' && <GameOverScreen />}
       {screen === 'completion' && <CompletionScreen />}
+
+      <footer style={{ position: 'fixed', bottom: 8, left: 0, right: 0, textAlign: 'center', fontSize: 11, color: 'var(--color-text-dim)', zIndex: 40, pointerEvents: 'none' }}>
+        Made with <span style={{ color: '#ff4444', display: 'inline-block' }}>♥</span> by the MLH Team
+      </footer>
     </div>
   );
 }
