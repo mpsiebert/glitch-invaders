@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useGameState } from '../../state/GameStateContext';
 import { BOUNTY_DEFINITIONS } from '../../game/bugs/BugManager';
 import { getInvestigateUrl, getTraceInvestigateUrl } from '../../sentry/links';
@@ -28,6 +28,18 @@ export function MissionPanel({ bountyId, onDismiss, onReplay, onComplete }: Miss
   const bounty = bounties[bountyId];
   const definition = BOUNTY_DEFINITIONS[bountyId];
   const [repairFeedback, setRepairFeedback] = useState<string | null>(null);
+
+  const isTraceBounty = bountyId === 'boss-buffering';
+  const initialDelay = isTraceBounty ? 5 : 3;
+  const [transmissionCount, setTransmissionCount] = useState<number>(initialDelay);
+
+  useEffect(() => {
+    if (transmissionCount <= 0) return;
+    const timer = setInterval(() => {
+      setTransmissionCount(prev => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [transmissionCount]);
 
   const investigateLink = useMemo(() => {
     if (bountyId === 'boss-buffering') {
@@ -76,8 +88,6 @@ export function MissionPanel({ bountyId, onDismiss, onReplay, onComplete }: Miss
     onComplete();
   };
 
-  const isTraceBounty = bountyId === 'boss-buffering';
-
   return (
     <div className="panel animate-slide-up" style={{ maxWidth: 600, maxHeight: '80vh', overflow: 'auto' }}>
       <div style={{ marginBottom: 16 }}>
@@ -104,19 +114,28 @@ export function MissionPanel({ bountyId, onDismiss, onReplay, onComplete }: Miss
             </div>
           ) : (
             <div>
-              <p style={{ fontSize: 13, marginBottom: 8 }}>
-                The telemetry data has been sent to Sentry. Click below to investigate.<br />
+              <p style={{ fontSize: 13, marginBottom: 12 }}>
+                The telemetry data is being sent to Sentry. Click below to investigate once transmission completes.<br />
                 <span style={{ color: 'var(--color-text-dim)', fontSize: 12 }}>The investigation opens in a new tab. Return here to submit your findings.</span>
               </p>
-              {isTraceBounty && (
-                <p style={{ fontSize: 12, color: 'var(--color-amber)', marginBottom: 12, background: 'rgba(255, 170, 0, 0.1)', padding: 10, borderRadius: 4, border: '1px solid var(--color-amber)' }}>
-                  ⏱️ <strong>Sentry Ingestion Note:</strong> Performance traces take 10–15 seconds to process. If Sentry says <em>"Unable to find any spans for this trace"</em>, wait 10 seconds and refresh the Sentry tab!
+              
+              {transmissionCount > 0 ? (
+                <div style={{ marginBottom: 12, padding: 12, border: '1px dashed var(--color-cyan)', borderRadius: 4, textAlign: 'center', background: 'rgba(0, 255, 255, 0.05)' }}>
+                  <span className="pixel-text neon-text-cyan animate-pulse" style={{ fontSize: 11 }}>
+                    📡 Transmitting Telemetry to Sentry... ({transmissionCount}s)
+                  </span>
+                </div>
+              ) : (
+                <button className="btn btn-primary animate-pulse" onClick={handleInvestigate} style={{ width: '100%', padding: '14px 24px', fontSize: 14 }}>
+                  🔍 Investigate in Sentry
+                </button>
+              )}
+
+              {isTraceBounty && transmissionCount === 0 && (
+                <p style={{ fontSize: 11, color: 'var(--color-text-dim)', marginTop: 8 }}>
+                  ℹ️ Performance traces take a moment to index. If Sentry says "no spans found", wait 5s and refresh the Sentry tab!
                 </p>
               )}
-              {investigateLink?.isFallback && (
-                <p style={{ fontSize: 12, color: 'var(--color-amber)', marginBottom: 8 }}>ℹ️ Using a prepared example. Live events may take a moment to appear.</p>
-              )}
-              <button className="btn btn-primary" onClick={handleInvestigate}>🔍 Investigate in Sentry</button>
             </div>
           )}
 
@@ -135,7 +154,7 @@ export function MissionPanel({ bountyId, onDismiss, onReplay, onComplete }: Miss
               <button className="btn btn-small" onClick={handleInvestigate}>🔍 Open Sentry again</button>
               {isTraceBounty ? (
                 <p style={{ fontSize: 11, color: 'var(--color-amber)', marginTop: 4 }}>
-                  ⏱️ Performance traces take ~15s to index in Sentry. If Sentry says "no spans found", refresh the Sentry tab!
+                  ⏱️ Performance traces take ~10s to index in Sentry. If Sentry says "no spans found", refresh the Sentry tab!
                 </p>
               ) : (
                 <p style={{ fontSize: 11, color: 'var(--color-text-dim)', marginTop: 4 }}>Events may take a moment to appear in Sentry. Try refreshing.</p>
