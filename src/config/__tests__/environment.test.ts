@@ -1,19 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
-import { getStationId, getInactivityTimeout } from '../environment';
+import { getStationId, getInactivityTimeout, isDemoMode } from '../environment';
 
 describe('environment', () => {
-  it('isDemoMode() returns true when VITE_SENTRY_DSN is not set', async () => {
-    // Dynamically import with a clean module to test demo mode behavior
-    // The function checks import.meta.env.VITE_SENTRY_DSN
-    const originalDsn = import.meta.env.VITE_SENTRY_DSN;
-    import.meta.env.VITE_SENTRY_DSN = '';
-    const { isDemoMode } = await import('../environment');
-    // In test env with no DSN set, should be demo mode
+  it('isDemoMode() returns true when VITE_SENTRY_DSN is not set', () => {
+    vi.stubEnv('VITE_SENTRY_DSN', '');
     expect(isDemoMode()).toBe(true);
-    // Restore
-    if (originalDsn) {
-      import.meta.env.VITE_SENTRY_DSN = originalDsn;
-    }
+    vi.unstubAllEnvs();
   });
 
   it('getStationId() returns "arcade-01" by default', () => {

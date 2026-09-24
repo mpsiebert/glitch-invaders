@@ -34,31 +34,39 @@ export async function spawnBossWithTracing(runId: string): Promise<string | null
 
   let traceId: string | null = null;
 
-  await Sentry.startSpan(
-    { 
-      name: 'boss-spawn', 
-      op: 'game.boss', 
-      forceTransaction: true, // Forces a clean, brand new trace!
-      attributes: { 'run_id': runId, 'bounty_id': 'boss-buffering', 'bug_active': bossBufferingBugActive } 
-    },
-    async (rootSpan) => {
-      traceId = rootSpan.spanContext().traceId;
-      if (bossBufferingBugActive) {
-        await Sentry.startSpan({ name: 'loadTextures', op: 'game.resource.load' }, () => loadTextures());
-        await Sentry.startSpan({ name: 'loadSounds', op: 'game.resource.load' }, () => loadSounds());
-        await Sentry.startSpan({ name: 'loadAnimations', op: 'game.resource.load' }, () => loadAnimations());
-        await Sentry.startSpan({ name: 'initializeAI', op: 'game.resource.load' }, () => initializeAI());
-      } else {
-        await Sentry.startSpan({ name: 'parallelResourceLoad', op: 'game.resource.load' }, () =>
-          Promise.all([
-            Sentry.startSpan({ name: 'loadTextures', op: 'game.resource.load' }, () => loadTextures()),
-            Sentry.startSpan({ name: 'loadSounds', op: 'game.resource.load' }, () => loadSounds()),
-            Sentry.startSpan({ name: 'initializeAI', op: 'game.resource.load' }, () => initializeAI()),
-          ])
-        );
+  // startNewTrace() creates a completely fresh trace context, detaching from
+  // the long-running pageload trace. This guarantees the boss-spawn trace
+  // appears as its own root in Sentry's Trace View with only the four
+  // resource-loading child spans visible.
+  await Sentry.startNewTrace(async () => {
+    await Sentry.startSpan(
+      {
+        name: 'boss-spawn',
+        op: 'game.boss',
+        forceTransaction: true,
+        attributes: { 'run_id': runId, 'bounty_id': 'boss-buffering', 'bug_active': bossBufferingBugActive },
+      },
+      async (rootSpan) => {
+        traceId = rootSpan.spanContext().traceId;
+        if (bossBufferingBugActive) {
+          // BUG: sequential loading with redundant loadAnimations
+          await Sentry.startSpan({ name: 'loadTextures', op: 'game.resource.load' }, () => loadTextures());
+          await Sentry.startSpan({ name: 'loadSounds', op: 'game.resource.load' }, () => loadSounds());
+          await Sentry.startSpan({ name: 'loadAnimations', op: 'game.resource.load' }, () => loadAnimations());
+          await Sentry.startSpan({ name: 'initializeAI', op: 'game.resource.load' }, () => initializeAI());
+        } else {
+          // FIXED: parallel loading without redundant loadAnimations
+          await Sentry.startSpan({ name: 'parallelResourceLoad', op: 'game.resource.load' }, () =>
+            Promise.all([
+              Sentry.startSpan({ name: 'loadTextures', op: 'game.resource.load' }, () => loadTextures()),
+              Sentry.startSpan({ name: 'loadSounds', op: 'game.resource.load' }, () => loadSounds()),
+              Sentry.startSpan({ name: 'initializeAI', op: 'game.resource.load' }, () => initializeAI()),
+            ])
+          );
+        }
       }
-    }
-  );
+    );
+  });
 
   addGameBreadcrumb('game.boss', 'Boss spawn complete', { traceId });
   return traceId;
@@ -77,10 +85,10 @@ export const BOSS_BUFFERING_DEFINITION: BountyDefinition = {
   title: 'Boss Buffering',
   tagline: 'The boss is taking forever to show up.',
   discoveryMessage:
-    'The boss introduction stalled for several seconds! A performance trace was captured in Sentry showing exactly where the time was spent.',
-  evidenceQuestion: 'Which operation accounts for most of the boss-spawn delay?',
+    'The boss introduction stalled for several seconds! A performance trace was captured in Sentry. Find the "boss-spawn" trace and compare its child spans to find the bottleneck.',
+  evidenceQuestion: 'Find the boss-spawn trace and compare its child spans. Enter the name of the longest operation.',
   acceptedAnswers: ['loadanimations', 'load-animations', 'load animations', 'loadAnimations', 'animations', 'load_animations'],
-  wrongAnswerHint: 'Open the trace in Sentry and look at the spans inside the boss-spawn operation. Which span took the longest?',
+  wrongAnswerHint: 'Open the trace in Sentry and look at the waterfall view inside the "boss-spawn" root span. Four operations ran sequentially: loadTextures, loadSounds, loadAnimations, and initializeAI. Which one took the longest?',
   repairs: [
     {
       id: 0, title: 'Remove redundant loading + parallelize', isCorrect: true,
@@ -99,9 +107,9 @@ export const BOSS_BUFFERING_DEFINITION: BountyDefinition = {
     },
   ],
   hints: [
-    'Open the performance trace in Sentry and look at the waterfall view. One operation takes significantly longer than the others.',
-    'In the Sentry Traces view, find the "boss-spawn" trace. Look at the individual spans. Which one takes the most time?',
-    'The answer is "loadAnimations". It takes ~1800ms and is redundant. Enter "loadAnimations" below.',
+    'Click "Open Sentry" and find the "boss-spawn" trace. Look at the waterfall view — four operations ran one after another. One is clearly longer than the rest.',
+    'In the trace waterfall, you should see: loadTextures (~1.2s), loadSounds (~1.0s), loadAnimations (~1.8s), and initializeAI (~0.5s). Which took the longest?',
+    'The answer is "loadAnimations". It takes ~1800ms and is redundant — animations were already loaded. Enter "loadAnimations" below.',
   ],
   isOptional: true,
 };
