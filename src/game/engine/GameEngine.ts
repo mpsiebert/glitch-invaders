@@ -56,6 +56,7 @@ export class GameEngine {
   private bug1Triggered = false;
   private bug2Triggered = false;
   private bug3Triggered = false;
+  private startingBossWave = false;
   private awaitingBug2Hit = false;
   private bug2ShieldCollected = false;
 
@@ -425,13 +426,14 @@ export class GameEngine {
 
   private checkBugTriggers(): void {
     const activeEnemies = this.enemies.filter(e => e.active);
-    if (activeEnemies.length === 0 && this.powerUps.length === 0 && !this.boss) {
+    if (activeEnemies.length === 0 && this.powerUps.length === 0 && !this.boss && !this.startingBossWave) {
       this.callbacks.onAllEnemiesCleared();
     }
   }
 
   async startBossWave(): Promise<void> {
-    if (this.boss) return;
+    if (this.boss || this.startingBossWave) return;
+    this.startingBossWave = true;
     this.phase = 'boss-intro';
     this.sound.play('bossAlert');
 
@@ -441,10 +443,12 @@ export class GameEngine {
       this.bug3Triggered = true;
       this.pause();
       this.callbacks.onBugEncounteredWithTrace('boss-buffering', traceId);
+      this.startingBossWave = false;
       return;
     }
 
     this.activateBoss();
+    this.startingBossWave = false;
   }
 
   activateBoss(): void {
