@@ -2,6 +2,8 @@ export class InputManager {
   private keys = new Set<string>();
   private handleKeyDown: (e: KeyboardEvent) => void;
   private handleKeyUp: (e: KeyboardEvent) => void;
+  private handleBlur: () => void;
+  private handleVisibilityChange: () => void;
 
   constructor() {
     this.handleKeyDown = (e: KeyboardEvent) => {
@@ -17,8 +19,17 @@ export class InputManager {
       const key = this.normalizeKey(e.key);
       if (key) this.keys.delete(key);
     };
+    this.handleBlur = () => {
+      this.clearAll();
+    };
+    this.handleVisibilityChange = () => {
+      if (document.hidden) this.clearAll();
+    };
+
     window.addEventListener('keydown', this.handleKeyDown);
     window.addEventListener('keyup', this.handleKeyUp);
+    window.addEventListener('blur', this.handleBlur);
+    document.addEventListener('visibilitychange', this.handleVisibilityChange);
   }
 
   private normalizeKey(key: string): string | null {
@@ -40,6 +51,8 @@ export class InputManager {
   destroy(): void {
     window.removeEventListener('keydown', this.handleKeyDown);
     window.removeEventListener('keyup', this.handleKeyUp);
+    window.removeEventListener('blur', this.handleBlur);
+    document.removeEventListener('visibilitychange', this.handleVisibilityChange);
     this.keys.clear();
   }
 }

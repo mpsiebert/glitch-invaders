@@ -68,3 +68,16 @@
 .control-btn:active, .control-btn.pressed { background: rgba(0, 255, 255, 0.3); }
 .control-btn-fire { width: 80px; height: 80px; border-radius: 50%; border-color: var(--color-red); background: rgba(255, 68, 68, 0.1); color: var(--color-red); font-size: 14px; font-family: var(--font-pixel); }
 .control-btn-fire:active, .control-btn-fire.pressed { background: rgba(255, 68, 68, 0.3); }
+
+.btn:focus-visible, .control-btn:focus-visible, .repair-card:focus-visible, .input:focus-visible {
+  outline: 2px solid var(--color-cyan);
+  outline-offset: 2px;
+}
+
+@media (max-width: 600px) {
+  .arcade-cabinet { padding: 8px; }
+  .panel { padding: 16px; max-width: 100% !important; }
+  .controls-container { gap: 8px; }
+  .control-btn { width: 52px; height: 52px; font-size: 20px; }
+  .control-btn-fire { width: 64px; height: 64px; font-size: 12px; }
+}

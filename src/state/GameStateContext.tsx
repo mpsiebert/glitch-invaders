@@ -94,7 +94,12 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
       const next = { ...prev };
       const order: BountyId[] = ['triple-trouble', 'friendly-fire', 'boss-buffering'];
       for (const id of order) {
-        if (next[id].phase === 'locked') { next[id] = { ...next[id], phase: 'active' }; break; }
+        if (next[id].phase !== 'completed') {
+          if (next[id].phase === 'locked') {
+            next[id] = { ...next[id], phase: 'active' };
+          }
+          break;
+        }
       }
       return next;
     });

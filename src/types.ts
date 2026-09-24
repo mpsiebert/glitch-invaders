@@ -155,7 +155,6 @@ export type GameEnginePhase =
 export interface GameCallbacks {
   onBugEncountered: (bountyId: BountyId, eventId: string | null) => void;
   onBugEncounteredWithTrace: (bountyId: BountyId, traceId: string | null) => void;
-  onVerificationResult: (bountyId: BountyId, success: boolean) => void;
   onScoreChange: (delta: number) => void;
   onLivesChange: (lives: number) => void;
   onBossDefeated: () => void;

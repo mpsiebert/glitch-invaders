@@ -29,8 +29,11 @@ export class InactivityMonitor {
     this.checkInterval = setInterval(() => this.check(), 5000);
   }
 
+  private cooldownUntil = 0;
+
   private check(): void {
     if (this.paused) return;
+    if (Date.now() < this.cooldownUntil) return;
     const elapsed = Date.now() - this.lastActivity;
     const timeout = getInactivityTimeout();
 
@@ -48,6 +51,7 @@ export class InactivityMonitor {
 
   acknowledgePresence(): void {
     this.lastActivity = Date.now();
+    this.cooldownUntil = Date.now() + 10000;
     this.warningShown = false;
     if (this.warningTimeout) {
       clearTimeout(this.warningTimeout);

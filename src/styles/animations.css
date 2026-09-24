@@ -38,3 +38,11 @@
 .animate-float { animation: float 3s ease-in-out infinite; }
 .animate-shake { animation: shake 0.5s ease-in-out; }
 .animate-blink { animation: blink 1s step-end infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

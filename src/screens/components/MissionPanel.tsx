@@ -73,8 +73,6 @@ export function MissionPanel({ bountyId, onDismiss, onReplay, onComplete }: Miss
   const handleBountyComplete = () => {
     addScore(SCORE_VERIFICATION);
     if (bountyId === 'boss-buffering') addScore(SCORE_BOSS_BONUS);
-    completeBounty(bountyId);
-    unlockNextBounty();
     onComplete();
   };
 

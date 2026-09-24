@@ -11,11 +11,11 @@ export function RepairSelector({ repairs, onSelect, feedback }: RepairSelectorPr
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {repairs.map(repair => (
-        <div key={repair.id} className="repair-card" onClick={() => onSelect(repair.id)}>
+        <button key={repair.id} className="repair-card" onClick={() => onSelect(repair.id)} aria-label={repair.title}>
           <h4 style={{ fontSize: 14, marginBottom: 6, color: 'var(--color-cyan)' }}>{repair.title}</h4>
           <p style={{ fontSize: 13, color: 'var(--color-text-dim)', marginBottom: 8 }}>{repair.description}</p>
           <pre className="code-snippet">{repair.codeSnippet}</pre>
-        </div>
+        </button>
       ))}
 
       {feedback && (

@@ -14,8 +14,16 @@ export function GameScreen() {
   const {
     runId, bounties, activeBounty, score, addScore, lives, setLives,
     updateBountyPhase, setBountyEventId, setBountyTraceId,
-    isMuted, setScreen, unlockNextBounty,
+    isMuted, setScreen, unlockNextBounty, completeBounty,
   } = useGameState();
+
+  const checkIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (checkIntervalRef.current) clearInterval(checkIntervalRef.current);
+    };
+  }, []);
 
   const [showMission, setShowMission] = useState(false);
   const [currentMissionBounty, setCurrentMissionBounty] = useState<BountyId | null>(null);
@@ -54,18 +62,31 @@ export function GameScreen() {
     }
   }, []);
 
+  const handleBugEncounteredRef = useRef(handleBugEncountered);
+  const handleBugEncounteredWithTraceRef = useRef(handleBugEncounteredWithTrace);
+  const handleScoreChangeRef = useRef(handleScoreChange);
+  const handleLivesChangeRef = useRef(handleLivesChange);
+  const handleBossDefeatedRef = useRef(handleBossDefeated);
+  const handleAllEnemiesClearedRef = useRef(handleAllEnemiesCleared);
+
+  useEffect(() => { handleBugEncounteredRef.current = handleBugEncountered; }, [handleBugEncountered]);
+  useEffect(() => { handleBugEncounteredWithTraceRef.current = handleBugEncounteredWithTrace; }, [handleBugEncounteredWithTrace]);
+  useEffect(() => { handleScoreChangeRef.current = handleScoreChange; }, [handleScoreChange]);
+  useEffect(() => { handleLivesChangeRef.current = handleLivesChange; }, [handleLivesChange]);
+  useEffect(() => { handleBossDefeatedRef.current = handleBossDefeated; }, [handleBossDefeated]);
+  useEffect(() => { handleAllEnemiesClearedRef.current = handleAllEnemiesCleared; }, [handleAllEnemiesCleared]);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const callbacks: GameCallbacks = {
-      onBugEncountered: handleBugEncountered,
-      onBugEncounteredWithTrace: handleBugEncounteredWithTrace,
-      onVerificationResult: () => {}, // unused directly since we poll
-      onScoreChange: handleScoreChange,
-      onLivesChange: handleLivesChange,
-      onBossDefeated: handleBossDefeated,
-      onAllEnemiesCleared: handleAllEnemiesCleared,
+      onBugEncountered: (id, eventId) => handleBugEncounteredRef.current(id, eventId),
+      onBugEncounteredWithTrace: (id, traceId) => handleBugEncounteredWithTraceRef.current(id, traceId),
+      onScoreChange: (delta) => handleScoreChangeRef.current(delta),
+      onLivesChange: (lives) => handleLivesChangeRef.current(lives),
+      onBossDefeated: () => handleBossDefeatedRef.current(),
+      onAllEnemiesCleared: () => handleAllEnemiesClearedRef.current(),
     };
 
     const engine = new GameEngine(canvas, callbacks, runId);
@@ -92,10 +113,10 @@ export function GameScreen() {
       setShowMission(false);
       engine.replayBugEncounter(bountyId);
 
-      const checkInterval = setInterval(() => {
+      checkIntervalRef.current = setInterval(() => {
         const result = engine.checkVerification();
         if (result) {
-          clearInterval(checkInterval);
+          if (checkIntervalRef.current) clearInterval(checkIntervalRef.current);
           setCurrentMissionBounty(result.bountyId);
           if (result.success) {
             updateBountyPhase(result.bountyId, 'completed');
@@ -105,7 +126,9 @@ export function GameScreen() {
         }
       }, 500);
 
-      setTimeout(() => clearInterval(checkInterval), 15000);
+      setTimeout(() => {
+        if (checkIntervalRef.current) clearInterval(checkIntervalRef.current);
+      }, 15000);
     }
   }, [updateBountyPhase, unlockNextBounty]);
 
@@ -119,12 +142,17 @@ export function GameScreen() {
     const engine = engineRef.current;
     if (engine) engine.resume();
     
+    if (currentMissionBounty) {
+      completeBounty(currentMissionBounty);
+      unlockNextBounty();
+    }
+    
     if (bounties['triple-trouble'].phase === 'completed' && bounties['friendly-fire'].phase === 'completed') {
       if (bounties['boss-buffering'].phase === 'completed') {
         setScreen('completion');
       }
     }
-  }, [bounties, setScreen]);
+  }, [bounties, setScreen, completeBounty, unlockNextBounty, currentMissionBounty]);
 
   return (
     <div className="arcade-cabinet" style={{ position: 'relative' }}>

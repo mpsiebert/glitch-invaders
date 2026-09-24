@@ -13,7 +13,7 @@ export function HUD({ score, lives, bounties, activeBounty }: HUDProps) {
 
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 16px', width: '100%', maxWidth: 820 }}>
-      <div className="pixel-text neon-text-amber" style={{ fontSize: 12 }}>
+      <div className="pixel-text neon-text-amber" style={{ fontSize: 12 }} role="status" aria-live="polite">
         {score.toLocaleString()}
       </div>
 
@@ -21,10 +21,18 @@ export function HUD({ score, lives, bounties, activeBounty }: HUDProps) {
         {bountyOrder.map(id => {
           const b = bounties[id];
           let className = 'bounty-dot';
-          if (b.phase === 'completed') className += ' completed';
-          else if (id === activeBounty && b.phase !== 'locked') className += ' active';
-          else className += ' locked';
-          return <div key={id} className={className} title={id} />;
+          let statusText = 'locked';
+          if (b.phase === 'completed') { className += ' completed'; statusText = 'completed'; }
+          else if (id === activeBounty && b.phase !== 'locked') { className += ' active'; statusText = 'active'; }
+          else { className += ' locked'; }
+          
+          const labelMap: Record<BountyId, string> = {
+            'triple-trouble': 'Triple Trouble',
+            'friendly-fire': 'Friendly Fire',
+            'boss-buffering': 'Boss Buffering'
+          };
+          
+          return <div key={id} className={className} title={id} aria-label={`${labelMap[id]}: ${statusText}`} />;
         })}
       </div>
 

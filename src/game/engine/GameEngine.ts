@@ -23,6 +23,7 @@ import { addGameBreadcrumb } from '../../sentry/telemetry';
 import { calculateShieldDamage, handleFriendlyFireBug } from '../bugs/friendlyFire';
 import { handleTripleTroubleError } from '../bugs/tripleTrouble';
 import { spawnBossWithTracing } from '../bugs/bossBuffering';
+import { GameRenderer } from './GameRenderer';
 
 export class GameEngine {
   private canvas: HTMLCanvasElement;
@@ -32,6 +33,7 @@ export class GameEngine {
   private weapon: WeaponSystem;
   private callbacks: GameCallbacks;
   private runId: string;
+  private renderer: GameRenderer;
 
   private animFrameId: number | null = null;
   private lastTimestamp = 0;
@@ -47,7 +49,9 @@ export class GameEngine {
   private killCount = 0;
   private enemyDirection = 1;
   private lastEnemyFire = 0;
-  private score = 0;
+
+  private shakeIntensity = 0;
+  private shakeDuration = 0;
 
   private bug1Triggered = false;
   private bug2Triggered = false;
@@ -67,6 +71,7 @@ export class GameEngine {
     this.weapon = new WeaponSystem();
     this.callbacks = callbacks;
     this.runId = runId;
+    this.renderer = new GameRenderer(this.ctx, CANVAS_WIDTH, CANVAS_HEIGHT);
 
     this.player = this.createPlayer();
     this.spawnEnemyWave();
@@ -116,7 +121,7 @@ export class GameEngine {
       const dt = Math.min(timestamp - this.lastTimestamp, 33.33);
       this.lastTimestamp = timestamp;
       if (this.phase === 'playing' || this.phase === 'replaying') this.update(dt);
-      this.render();
+      this.render(dt);
       this.animFrameId = requestAnimationFrame(loop);
     };
     this.animFrameId = requestAnimationFrame(loop);
@@ -269,7 +274,6 @@ export class GameEngine {
           if (enemy.health <= 0) {
             enemy.active = false;
             this.killCount++;
-            this.score += enemy.points;
             this.callbacks.onScoreChange(enemy.points);
             this.sound.play('explosion');
             this.spawnExplosion(enemy.position.x + enemy.size.x / 2, enemy.position.y + enemy.size.y / 2, COLORS.enemyRow[enemy.row % COLORS.enemyRow.length]);
@@ -287,7 +291,6 @@ export class GameEngine {
           if (this.boss.health <= 0) {
             this.boss.phase = 'defeated';
             this.boss.active = false;
-            this.score += this.boss.points;
             this.callbacks.onScoreChange(this.boss.points);
             this.sound.play('explosion');
             this.spawnExplosion(this.boss.position.x + this.boss.size.x / 2, this.boss.position.y + this.boss.size.y / 2, COLORS.boss);
@@ -336,6 +339,9 @@ export class GameEngine {
     const p = this.player;
     const healthBefore = p.health;
     const { actualDamage, shieldConsumed } = calculateShieldDamage(p.shieldActive, damage);
+
+    this.shakeIntensity = 4;
+    this.shakeDuration = 200;
 
     if (shieldConsumed) p.shieldActive = false;
     p.health -= actualDamage;
@@ -524,116 +530,27 @@ export class GameEngine {
   getPlayerHealth(): number { return this.player.health; }
   getInputManager(): InputManager { return this.input; }
 
-  private render(): void {
+  private render(dt: number = 0): void {
     const ctx = this.ctx;
-    ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-    ctx.fillStyle = COLORS.background;
-    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-
-    ctx.fillStyle = 'rgba(255,255,255,0.3)';
-    for (let i = 0; i < 50; i++) {
-      const sx = (i * 137.5 + Date.now() * 0.001 * (i % 3 + 1)) % CANVAS_WIDTH;
-      const sy = (i * 97.3) % CANVAS_HEIGHT;
-      ctx.fillRect(sx, sy, 1, 1);
+    
+    ctx.save();
+    if (this.shakeDuration > 0) {
+      const offsetX = (Math.random() - 0.5) * this.shakeIntensity * 2;
+      const offsetY = (Math.random() - 0.5) * this.shakeIntensity * 2;
+      ctx.translate(offsetX, offsetY);
+      this.shakeDuration -= dt;
     }
 
-    this.renderEnemies(ctx);
-    this.renderProjectiles(ctx);
-    this.renderPowerUps(ctx);
-    this.renderPlayer(ctx);
-    this.renderBoss(ctx);
-    this.renderParticles(ctx);
-  }
+    this.renderer.render({
+      player: this.player,
+      enemies: this.enemies,
+      projectiles: this.projectiles,
+      powerUps: this.powerUps,
+      boss: this.boss,
+      particles: this.particles
+    });
 
-  private renderPlayer(ctx: CanvasRenderingContext2D): void {
-    const p = this.player;
-    if (p.invulnerable && Math.floor(Date.now() / 100) % 2 === 0) return;
-
-    if (p.shieldActive) {
-      ctx.strokeStyle = COLORS.playerShield; ctx.lineWidth = 2; ctx.shadowColor = COLORS.playerShield; ctx.shadowBlur = 10;
-      ctx.beginPath(); ctx.ellipse(p.position.x + p.size.x / 2, p.position.y + p.size.y / 2, p.size.x * 0.7, p.size.y * 0.7, 0, 0, Math.PI * 2);
-      ctx.stroke(); ctx.shadowBlur = 0;
-    }
-
-    ctx.fillStyle = COLORS.player; ctx.shadowColor = COLORS.player; ctx.shadowBlur = 8;
-    ctx.beginPath(); ctx.moveTo(p.position.x + p.size.x / 2, p.position.y); ctx.lineTo(p.position.x, p.position.y + p.size.y); ctx.lineTo(p.position.x + p.size.x, p.position.y + p.size.y); ctx.closePath();
-    ctx.fill(); ctx.shadowBlur = 0;
-
-    ctx.fillStyle = '#ff8800';
-    ctx.fillRect(p.position.x + p.size.x / 2 - 4, p.position.y + p.size.y, 8, 4 + Math.random() * 4);
-  }
-
-  private renderEnemies(ctx: CanvasRenderingContext2D): void {
-    for (const e of this.enemies) {
-      if (!e.active) continue;
-      const color = COLORS.enemyRow[e.row % COLORS.enemyRow.length];
-      ctx.fillStyle = color; ctx.shadowColor = color; ctx.shadowBlur = 6;
-
-      const { x, y } = e.position; const { x: w, y: h } = e.size;
-      ctx.fillRect(x + w * 0.2, y, w * 0.6, h * 0.3); ctx.fillRect(x, y + h * 0.3, w, h * 0.4);
-      ctx.fillRect(x + w * 0.1, y + h * 0.7, w * 0.25, h * 0.3); ctx.fillRect(x + w * 0.65, y + h * 0.7, w * 0.25, h * 0.3);
-
-      ctx.fillStyle = COLORS.background;
-      ctx.fillRect(x + w * 0.25, y + h * 0.35, w * 0.15, h * 0.15); ctx.fillRect(x + w * 0.6, y + h * 0.35, w * 0.15, h * 0.15);
-
-      if (e.type === 'armored' && e.health < e.maxHealth) {
-        ctx.fillStyle = COLORS.projectileEnemy; ctx.fillRect(x, y - 4, w * (e.health / e.maxHealth), 2);
-      }
-      ctx.shadowBlur = 0;
-    }
-  }
-
-  private renderProjectiles(ctx: CanvasRenderingContext2D): void {
-    for (const p of this.projectiles) {
-      if (!p.active) continue;
-      ctx.fillStyle = p.color; ctx.shadowColor = p.color; ctx.shadowBlur = 6;
-      ctx.fillRect(p.position.x, p.position.y, p.size.x, p.size.y); ctx.shadowBlur = 0;
-    }
-  }
-
-  private renderPowerUps(ctx: CanvasRenderingContext2D): void {
-    for (const pu of this.powerUps) {
-      if (!pu.active) continue;
-      ctx.fillStyle = pu.color; ctx.shadowColor = pu.color; ctx.shadowBlur = 10;
-
-      const cx = pu.position.x + pu.size.x / 2; const cy = pu.position.y + pu.size.y / 2;
-      const r = pu.size.x / 2; const angle = Date.now() * 0.003;
-
-      ctx.beginPath();
-      ctx.moveTo(cx + Math.cos(angle) * r, cy + Math.sin(angle) * r);
-      ctx.lineTo(cx + Math.cos(angle + Math.PI / 2) * r * 0.6, cy + Math.sin(angle + Math.PI / 2) * r * 0.6);
-      ctx.lineTo(cx + Math.cos(angle + Math.PI) * r, cy + Math.sin(angle + Math.PI) * r);
-      ctx.lineTo(cx + Math.cos(angle + 3 * Math.PI / 2) * r * 0.6, cy + Math.sin(angle + 3 * Math.PI / 2) * r * 0.6);
-      ctx.closePath(); ctx.fill();
-
-      ctx.shadowBlur = 0; ctx.fillStyle = '#fff'; ctx.font = '8px monospace'; ctx.textAlign = 'center';
-      const label = pu.type === 'tripleShot' ? '3×' : pu.type === 'shield' ? '🛡' : '⚡';
-      ctx.fillText(label, cx, cy + 3);
-    }
-  }
-
-  private renderBoss(ctx: CanvasRenderingContext2D): void {
-    if (!this.boss || !this.boss.active) return;
-    ctx.fillStyle = COLORS.boss; ctx.shadowColor = COLORS.boss; ctx.shadowBlur = 15;
-    const { x, y } = this.boss.position; const { x: w, y: h } = this.boss.size;
-
-    ctx.fillRect(x + w * 0.1, y, w * 0.8, h * 0.6); ctx.fillRect(x, y + h * 0.2, w, h * 0.3);
-    ctx.fillRect(x + w * 0.15, y + h * 0.6, w * 0.2, h * 0.4); ctx.fillRect(x + w * 0.65, y + h * 0.6, w * 0.2, h * 0.4);
-
-    ctx.fillStyle = '#ff0000';
-    ctx.fillRect(x + w * 0.25, y + h * 0.15, w * 0.15, h * 0.2); ctx.fillRect(x + w * 0.6, y + h * 0.15, w * 0.15, h * 0.2);
-    ctx.shadowBlur = 0;
-
-    const barWidth = w; const barHeight = 6; const barY = y - 12;
-    ctx.fillStyle = '#333'; ctx.fillRect(x, barY, barWidth, barHeight);
-    ctx.fillStyle = COLORS.boss; ctx.fillRect(x, barY, barWidth * (this.boss.health / this.boss.maxHealth), barHeight);
-  }
-
-  private renderParticles(ctx: CanvasRenderingContext2D): void {
-    for (const p of this.particles) {
-      ctx.globalAlpha = p.life; ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, 3, 3);
-    }
-    ctx.globalAlpha = 1;
+    ctx.restore();
   }
 
   destroy(): void { this.stop(); this.input.destroy(); this.sound.destroy(); }
@@ -642,7 +559,7 @@ export class GameEngine {
     this.stop(); this.runId = newRunId;
     this.player = this.createPlayer();
     this.enemies = []; this.projectiles = []; this.powerUps = []; this.boss = null; this.particles = [];
-    this.killCount = 0; this.score = 0;
+    this.killCount = 0;
     this.bug1Triggered = false; this.bug2Triggered = false; this.bug3Triggered = false;
     this.awaitingBug2Hit = false; this.bug2ShieldCollected = false; this.verifyingBounty = null;
     this.enemyDirection = 1; this.lastEnemyFire = 0;
