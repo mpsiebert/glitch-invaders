@@ -25,9 +25,9 @@ describe('Sentry Links', () => {
     });
   });
 
-  it('getSentryEventUrl constructs search URL with eventId', () => {
+  it('getSentryEventUrl constructs search URL with eventId and 14d statsPeriod', () => {
     const url = getSentryEventUrl('event-777');
-    expect(url).toBe('https://test-org.sentry.io/issues/?query=event-777');
+    expect(url).toBe('https://test-org.sentry.io/issues/?query=event-777&statsPeriod=14d');
   });
 
   it('returns null in demo mode when DSN is empty', () => {

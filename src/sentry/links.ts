@@ -5,15 +5,15 @@ export function getSentryIssueUrl(runId: string, bountyId: BountyId): string | n
   if (isDemoMode()) return null;
   const config = getSentryConfig();
   if (!config) return null;
-  const query = encodeURIComponent(`run_id:${runId} bounty_id:${bountyId}`);
-  return `https://${config.org}.sentry.io/issues/?query=${query}&statsPeriod=1h`;
+  const query = encodeURIComponent(`bounty_id:${bountyId}`);
+  return `https://${config.org}.sentry.io/issues/?query=${query}&statsPeriod=14d`;
 }
 
 export function getSentryEventUrl(eventId: string): string | null {
   if (isDemoMode()) return null;
   const config = getSentryConfig();
   if (!config) return null;
-  return `https://${config.org}.sentry.io/issues/?query=${eventId}`;
+  return `https://${config.org}.sentry.io/issues/?query=${eventId}&statsPeriod=14d`;
 }
 
 export function getSentryTraceUrl(traceId: string | null): string | null {
@@ -26,7 +26,13 @@ export function getSentryTraceUrl(traceId: string | null): string | null {
 export function getInvestigateUrl(
   bountyId: BountyId, runId: string, eventId: string | null
 ): { url: string; isFallback: boolean } | null {
-  // Tag-based search is the most reliable way to find the issue
+  // If we have an exact event ID, search by event ID first
+  if (eventId) {
+    const eventUrl = getSentryEventUrl(eventId);
+    if (eventUrl) return { url: eventUrl, isFallback: false };
+  }
+
+  // Otherwise, search by bounty_id over 14 days
   const searchUrl = getSentryIssueUrl(runId, bountyId);
   if (searchUrl) return { url: searchUrl, isFallback: false };
   
