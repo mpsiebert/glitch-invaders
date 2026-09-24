@@ -142,7 +142,7 @@ export interface BountyDefinition {
 
 // ─── Game State ──────────────────────────────────────────────
 
-export type ScreenType = 'welcome' | 'game' | 'completion';
+export type ScreenType = 'welcome' | 'game' | 'completion' | 'gameover';
 
 export type GameEnginePhase =
   | 'playing'
@@ -157,8 +157,19 @@ export interface GameCallbacks {
   onBugEncounteredWithTrace: (bountyId: BountyId, traceId: string | null) => void;
   onScoreChange: (delta: number) => void;
   onLivesChange: (lives: number) => void;
+  onGameOver: () => void;
   onBossDefeated: () => void;
   onAllEnemiesCleared: () => void;
+}
+
+// ─── Leaderboard ─────────────────────────────────────────────
+
+export interface LeaderboardEntry {
+  id: string;
+  name: string;
+  score: number;
+  date: string;
+  bountiesFixed: number;
 }
 
 // ─── Sentry Config ───────────────────────────────────────────

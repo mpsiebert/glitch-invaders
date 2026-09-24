@@ -1,8 +1,12 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useGameState } from '../state/GameStateContext';
+import { getLeaderboard, saveLeaderboardEntry } from '../state/LeaderboardManager';
 
 export function CompletionScreen() {
   const { score, bounties, startTime, resetRun, isDemoMode } = useGameState();
+  const [initials, setInitials] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+  const [leaderboard, setLeaderboard] = useState(getLeaderboard);
 
   const elapsed = useMemo(() => {
     const ms = Date.now() - startTime;
@@ -13,14 +17,22 @@ export function CompletionScreen() {
 
   const completedCount = Object.values(bounties).filter(b => b.phase === 'completed').length;
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!initials.trim() || submitted) return;
+    const updated = saveLeaderboardEntry(initials, score, completedCount);
+    setLeaderboard(updated);
+    setSubmitted(true);
+  };
+
   return (
-    <div className="arcade-cabinet" style={{ justifyContent: 'center', gap: 24, padding: 40 }}>
+    <div className="arcade-cabinet animate-fade-in" style={{ justifyContent: 'center', gap: 20, padding: 32, overflowY: 'auto' }}>
       <h1 className="pixel-text neon-text-green" style={{ fontSize: 24, textAlign: 'center' }}>
         Mission Complete!
       </h1>
 
-      <div className="panel panel-green" style={{ maxWidth: 500, textAlign: 'center' }}>
-        <div className="pixel-text neon-text-amber" style={{ fontSize: 20, marginBottom: 12 }}>
+      <div className="panel panel-green" style={{ maxWidth: 500, textAlign: 'center', width: '100%' }}>
+        <div className="pixel-text neon-text-amber" style={{ fontSize: 20, marginBottom: 8 }}>
           {score.toLocaleString()} pts
         </div>
         <div style={{ fontSize: 13, color: 'var(--color-text-dim)' }}>
@@ -28,31 +40,62 @@ export function CompletionScreen() {
         </div>
       </div>
 
-      <div style={{ maxWidth: 500, width: '100%' }}>
-        {(Object.values(bounties) as Array<{ id: string; phase: string; hintsUsed: number; repairAttempts: number }>).map(b => (
-          <div key={b.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #333' }}>
-            <span style={{ textTransform: 'capitalize' }}>
-              {b.phase === 'completed' ? '✅' : '⬜'} {b.id.replace(/-/g, ' ')}
-            </span>
-            {b.phase === 'completed' && (
-              <span style={{ fontSize: 12, color: 'var(--color-text-dim)' }}>
-                {b.hintsUsed} hints · {b.repairAttempts} attempts
-              </span>
-            )}
+      {!submitted ? (
+        <form onSubmit={handleSubmit} style={{ maxWidth: 500, width: '100%', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <label htmlFor="comp-initials" style={{ fontSize: 13, textAlign: 'center' }}>
+            Submit your score to the Leaderboard:
+          </label>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input
+              id="comp-initials"
+              className="input"
+              type="text"
+              maxLength={3}
+              value={initials}
+              onChange={e => setInitials(e.target.value.toUpperCase())}
+              placeholder="AAA"
+              style={{ textAlign: 'center', fontFamily: 'var(--font-pixel)', fontSize: 18, letterSpacing: 4 }}
+              autoFocus
+            />
+            <button className="btn btn-success" type="submit" disabled={!initials.trim()}>
+              Save
+            </button>
           </div>
-        ))}
-      </div>
+        </form>
+      ) : (
+        <p className="neon-text-green" style={{ fontSize: 13, textAlign: 'center' }}>
+          ✅ High Score Recorded!
+        </p>
+      )}
 
-      <div className="panel" style={{ maxWidth: 500 }}>
-        <h3 className="pixel-text neon-text-cyan" style={{ fontSize: 12, marginBottom: 16 }}>What you learned</h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontSize: 14 }}>
-          <div>🔍 <strong>Stack traces</strong> locate failures — they show exactly where an error occurred in the code.</div>
-          <div>🍞 <strong>Breadcrumbs</strong> explain what happened before — a timeline of events leading up to the error.</div>
-          <div>⏱️ <strong>Traces</strong> reveal where time is spent — showing each operation and its duration.</div>
-        </div>
+      {/* Leaderboard Table */}
+      <div className="panel" style={{ maxWidth: 500, width: '100%' }}>
+        <h3 className="pixel-text neon-text-amber" style={{ fontSize: 11, textAlign: 'center', marginBottom: 12 }}>
+          🏆 Leaderboard
+        </h3>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+          <thead>
+            <tr style={{ borderBottom: '1px solid #444', color: 'var(--color-text-dim)', fontSize: 10 }}>
+              <th style={{ textAlign: 'left', paddingBottom: 4 }}>#</th>
+              <th style={{ textAlign: 'left', paddingBottom: 4 }}>NAME</th>
+              <th style={{ textAlign: 'center', paddingBottom: 4 }}>BUGS</th>
+              <th style={{ textAlign: 'right', paddingBottom: 4 }}>SCORE</th>
+            </tr>
+          </thead>
+          <tbody>
+            {leaderboard.slice(0, 5).map((entry, index) => (
+              <tr key={entry.id} style={{ borderBottom: '1px solid #222' }}>
+                <td style={{ padding: '4px 0', color: 'var(--color-amber)' }}>#{index + 1}</td>
+                <td className="pixel-text" style={{ padding: '4px 0' }}>{entry.name}</td>
+                <td style={{ textAlign: 'center', padding: '4px 0', color: 'var(--color-text-dim)' }}>{entry.bountiesFixed}</td>
+                <td className="pixel-text neon-text-cyan" style={{ textAlign: 'right', padding: '4px 0' }}>
+                  {entry.score.toLocaleString()}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
-
-      {isDemoMode && <div style={{ textAlign: 'center', fontSize: 12, color: 'var(--color-amber)' }}>Demo mode — connect Sentry for the full experience</div>}
 
       <button className="btn btn-primary btn-large" onClick={resetRun} style={{ alignSelf: 'center' }}>
         Next Player

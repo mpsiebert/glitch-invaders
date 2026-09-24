@@ -5,6 +5,7 @@ import { InactivityMonitor } from './state/InactivityMonitor';
 import { WelcomeScreen } from './screens/WelcomeScreen';
 import { GameScreen } from './screens/GameScreen';
 import { CompletionScreen } from './screens/CompletionScreen';
+import { GameOverScreen } from './screens/GameOverScreen';
 
 function AppContent() {
   const { screen, resetRun, setShowInactivityWarning } = useGameState();
@@ -24,6 +25,7 @@ function AppContent() {
     <div className="arcade-cabinet">
       {screen === 'welcome' && <WelcomeScreen />}
       {screen === 'game' && <GameScreen />}
+      {screen === 'gameover' && <GameOverScreen />}
       {screen === 'completion' && <CompletionScreen />}
     </div>
   );

@@ -358,8 +358,10 @@ export class GameEngine {
         return;
       }
       this.sound.play('explosion');
+      this.sound.play('fail');
       this.spawnExplosion(p.position.x + p.size.x / 2, p.position.y + p.size.y / 2, COLORS.player);
-      this.respawnPlayer();
+      this.pause();
+      this.callbacks.onGameOver();
     } else {
       this.sound.play('hit');
       p.invulnerable = true;

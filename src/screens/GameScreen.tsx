@@ -49,6 +49,10 @@ export function GameScreen() {
     setTimeout(() => setScreen('completion'), 2000);
   }, [setScreen]);
 
+  const handleGameOver = useCallback(() => {
+    setTimeout(() => setScreen('gameover'), 1000);
+  }, [setScreen]);
+
   const bountiesRef = useRef(bounties);
   useEffect(() => { bountiesRef.current = bounties; }, [bounties]);
 
@@ -67,6 +71,7 @@ export function GameScreen() {
   const handleScoreChangeRef = useRef(handleScoreChange);
   const handleLivesChangeRef = useRef(handleLivesChange);
   const handleBossDefeatedRef = useRef(handleBossDefeated);
+  const handleGameOverRef = useRef(handleGameOver);
   const handleAllEnemiesClearedRef = useRef(handleAllEnemiesCleared);
 
   useEffect(() => { handleBugEncounteredRef.current = handleBugEncountered; }, [handleBugEncountered]);
@@ -74,6 +79,7 @@ export function GameScreen() {
   useEffect(() => { handleScoreChangeRef.current = handleScoreChange; }, [handleScoreChange]);
   useEffect(() => { handleLivesChangeRef.current = handleLivesChange; }, [handleLivesChange]);
   useEffect(() => { handleBossDefeatedRef.current = handleBossDefeated; }, [handleBossDefeated]);
+  useEffect(() => { handleGameOverRef.current = handleGameOver; }, [handleGameOver]);
   useEffect(() => { handleAllEnemiesClearedRef.current = handleAllEnemiesCleared; }, [handleAllEnemiesCleared]);
 
   useEffect(() => {
@@ -85,6 +91,7 @@ export function GameScreen() {
       onBugEncounteredWithTrace: (id, traceId) => handleBugEncounteredWithTraceRef.current(id, traceId),
       onScoreChange: (delta) => handleScoreChangeRef.current(delta),
       onLivesChange: (lives) => handleLivesChangeRef.current(lives),
+      onGameOver: () => handleGameOverRef.current(),
       onBossDefeated: () => handleBossDefeatedRef.current(),
       onAllEnemiesCleared: () => handleAllEnemiesClearedRef.current(),
     };
