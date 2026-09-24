@@ -34,10 +34,6 @@ export async function spawnBossWithTracing(runId: string): Promise<string | null
 
   let traceId: string | null = null;
 
-  // startNewTrace() creates a completely fresh trace context, detaching from
-  // the long-running pageload trace. This guarantees the boss-spawn trace
-  // appears as its own root in Sentry's Trace View with only the four
-  // resource-loading child spans visible.
   await Sentry.startNewTrace(async () => {
     await Sentry.startSpan(
       {
@@ -49,13 +45,11 @@ export async function spawnBossWithTracing(runId: string): Promise<string | null
       async (rootSpan) => {
         traceId = rootSpan.spanContext().traceId;
         if (bossBufferingBugActive) {
-          // BUG: sequential loading with redundant loadAnimations
           await Sentry.startSpan({ name: 'loadTextures', op: 'game.resource.load' }, () => loadTextures());
           await Sentry.startSpan({ name: 'loadSounds', op: 'game.resource.load' }, () => loadSounds());
           await Sentry.startSpan({ name: 'loadAnimations', op: 'game.resource.load' }, () => loadAnimations());
           await Sentry.startSpan({ name: 'initializeAI', op: 'game.resource.load' }, () => initializeAI());
         } else {
-          // FIXED: parallel loading without redundant loadAnimations
           await Sentry.startSpan({ name: 'parallelResourceLoad', op: 'game.resource.load' }, () =>
             Promise.all([
               Sentry.startSpan({ name: 'loadTextures', op: 'game.resource.load' }, () => loadTextures()),
@@ -94,16 +88,19 @@ export const BOSS_BUFFERING_DEFINITION: BountyDefinition = {
       id: 0, title: 'Remove redundant loading + parallelize', isCorrect: true,
       description: 'Animations were already loaded at game start. Remove loadAnimations and run remaining loads in parallel.',
       codeSnippet: `// Remove redundant loadAnimations()\nawait Promise.all([\n  loadTextures(),\n  loadSounds(),\n  initializeAI(),\n]);`,
+      successExplanation: 'Spot on! Removing the redundant 1.8s loadAnimations call and parallelizing textures, sounds, and AI loading cuts boss spawn delay from ~4.5s down to 1.2s.',
     },
     {
       id: 1, title: 'Parallelize all resource loading', isCorrect: false,
       description: 'Run all four operations in parallel. Faster, but still loads redundant animations.',
       codeSnippet: `await Promise.all([\n  loadTextures(),\n  loadSounds(),\n  loadAnimations(), // still redundant!\n  initializeAI(),\n]);`,
+      incorrectFeedback: 'Parallelizing all 4 operations helps, but loadAnimations (1.8s) is still being called redundantly! Animations were already preloaded when the game started.',
     },
     {
       id: 2, title: 'Add a resource cache check', isCorrect: false,
       description: 'Check if each resource is cached before loading. Adds complexity but keeps sequential loading.',
       codeSnippet: `if (!cache.has('textures')) await loadTextures();\nif (!cache.has('sounds')) await loadSounds();\nif (!cache.has('anims')) await loadAnimations();\nif (!cache.has('ai')) await initializeAI();`,
+      incorrectFeedback: 'Cache checks don\'t eliminate the initial sequential loading delay on first spawn, and add unnecessary complexity!',
     },
   ],
   hints: [

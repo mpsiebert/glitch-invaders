@@ -66,16 +66,19 @@ export const FRIENDLY_FIRE_DEFINITION: BountyDefinition = {
       id: 0, title: 'Shield absorbs damage completely', isCorrect: true,
       description: 'When shield is active, set actual damage to 0 and consume the shield.',
       codeSnippet: `if (shieldActive) {\n  actualDamage = 0;\n  shieldConsumed = true;\n}`,
+      successExplanation: 'Excellent patch! Setting actualDamage to 0 guarantees that the shield absorbs 100% of the incoming hit before being consumed.',
     },
     {
       id: 1, title: 'Remove the damage multiplier', isCorrect: false,
       description: 'Remove the ×3 multiplier so damage passes through normally.',
       codeSnippet: `if (shieldActive) {\n  actualDamage = incomingDamage;\n}`,
+      incorrectFeedback: 'Removing the ×3 multiplier stops amplified damage, but damage still passes straight through to player health! A shield must absorb damage completely (damage = 0).',
     },
     {
       id: 2, title: 'Deactivate the shield on hit', isCorrect: false,
       description: 'Turn off the shield when hit, but still apply full damage.',
       codeSnippet: `if (shieldActive) {\n  shieldActive = false;\n  actualDamage = incomingDamage;\n}`,
+      incorrectFeedback: 'Turning off the shield doesn\'t protect the player! The ship still takes full incoming damage upon impact.',
     },
   ],
   hints: [

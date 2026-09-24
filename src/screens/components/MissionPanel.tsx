@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useGameState } from '../../state/GameStateContext';
 import { BOUNTY_DEFINITIONS } from '../../game/bugs/BugManager';
 import { getInvestigateUrl, getTraceInvestigateUrl } from '../../sentry/links';
@@ -27,19 +27,10 @@ export function MissionPanel({ bountyId, onDismiss, onReplay, onComplete }: Miss
 
   const bounty = bounties[bountyId];
   const definition = BOUNTY_DEFINITIONS[bountyId];
-  const [repairFeedback, setRepairFeedback] = useState<string | null>(null);
 
   const isTraceBounty = bountyId === 'boss-buffering';
   const initialDelay = isTraceBounty ? 5 : 3;
   const [transmissionCount, setTransmissionCount] = useState<number>(initialDelay);
-
-  useEffect(() => {
-    if (transmissionCount <= 0) return;
-    const timer = setInterval(() => {
-      setTransmissionCount(prev => (prev > 0 ? prev - 1 : 0));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [transmissionCount]);
 
   const investigateLink = useMemo(() => {
     if (bountyId === 'boss-buffering') {
@@ -69,15 +60,17 @@ export function MissionPanel({ bountyId, onDismiss, onReplay, onComplete }: Miss
     return false;
   };
 
-  const handleRepairSelect = (repairId: number) => {
+  const handleAttemptRepair = (repairId: number): boolean => {
     const success = attemptRepair(bountyId, repairId);
     if (success) {
-      addScore(bounty.repairAttempts === 0 ? SCORE_REPAIR_FIRST_TRY : SCORE_REPAIR_SECOND_TRY);
-      setRepairFeedback(null);
-      updateBountyPhase(bountyId, 'verifying');
-    } else {
-      setRepairFeedback('That repair didn\'t quite work. The bug is still present. Try another approach!');
+      const points = bounty.repairAttempts === 0 ? SCORE_REPAIR_FIRST_TRY : SCORE_REPAIR_SECOND_TRY;
+      addScore(points);
     }
+    return success;
+  };
+
+  const handleApplyAndVerify = () => {
+    updateBountyPhase(bountyId, 'verifying');
   };
 
   const handleStartReplay = () => onReplay(bountyId);
@@ -115,7 +108,7 @@ export function MissionPanel({ bountyId, onDismiss, onReplay, onComplete }: Miss
           ) : (
             <div>
               <p style={{ fontSize: 13, marginBottom: 12 }}>
-                The telemetry data is being sent to Sentry. Click below to investigate once transmission completes.<br />
+                The telemetry data has been sent to Sentry. Click below to investigate once transmission completes.<br />
                 <span style={{ color: 'var(--color-text-dim)', fontSize: 12 }}>The investigation opens in a new tab. Return here to submit your findings.</span>
               </p>
               
@@ -169,7 +162,11 @@ export function MissionPanel({ bountyId, onDismiss, onReplay, onComplete }: Miss
       {bounty.phase === 'repair-select' && (
         <div>
           <p style={{ fontSize: 14, marginBottom: 16 }}>Great detective work! Now choose the right repair to fix the bug:</p>
-          <RepairSelector repairs={definition.repairs} onSelect={handleRepairSelect} feedback={repairFeedback} />
+          <RepairSelector
+            repairs={definition.repairs}
+            onAttemptRepair={handleAttemptRepair}
+            onApplyAndVerify={handleApplyAndVerify}
+          />
         </div>
       )}
 

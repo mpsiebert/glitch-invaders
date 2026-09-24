@@ -125,6 +125,8 @@ export interface RepairOption {
   description: string;
   codeSnippet: string;
   isCorrect: boolean;
+  incorrectFeedback?: string;
+  successExplanation?: string;
 }
 
 export interface BountyDefinition {
