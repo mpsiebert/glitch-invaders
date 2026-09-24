@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useGameState } from '../../state/GameStateContext';
 import { BOUNTY_DEFINITIONS } from '../../game/bugs/BugManager';
 import { getInvestigateUrl, getTraceInvestigateUrl } from '../../sentry/links';
@@ -29,8 +29,22 @@ export function MissionPanel({ bountyId, onDismiss, onReplay, onComplete }: Miss
   const definition = BOUNTY_DEFINITIONS[bountyId];
 
   const isTraceBounty = bountyId === 'boss-buffering';
-  const initialDelay = isTraceBounty ? 5 : 3;
-  const [transmissionCount, setTransmissionCount] = useState<number>(initialDelay);
+  const [transmissionCount, setTransmissionCount] = useState<number>(isTraceBounty ? 5 : 3);
+
+  useEffect(() => {
+    const durationMs = (bountyId === 'boss-buffering' ? 5 : 3) * 1000;
+    const targetTime = Date.now() + durationMs;
+
+    const timer = setInterval(() => {
+      const remaining = Math.max(0, Math.ceil((targetTime - Date.now()) / 1000));
+      setTransmissionCount(remaining);
+      if (remaining <= 0) {
+        clearInterval(timer);
+      }
+    }, 200);
+
+    return () => clearInterval(timer);
+  }, [bountyId]);
 
   const investigateLink = useMemo(() => {
     if (bountyId === 'boss-buffering') {
