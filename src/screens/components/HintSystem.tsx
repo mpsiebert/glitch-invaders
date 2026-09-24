@@ -10,9 +10,11 @@ export function HintSystem({ hints, hintsUsed, onRevealHint }: HintSystemProps) 
   return (
     <div style={{ marginTop: 16 }}>
       {Array.from({ length: Math.min(hintsUsed, 3) }).map((_, i) => (
-        <div key={i} className="hint-reveal" style={{ marginBottom: 8 }}>
-          <span style={{ fontSize: 11, opacity: 0.7 }}>Hint {i + 1}:</span>
-          <p style={{ fontSize: 13, marginTop: 4 }}>{hints[i]}</p>
+        <div key={i} className="hint-reveal" style={{ marginBottom: 12 }}>
+          <span className="badge badge-demo" style={{ marginBottom: 6 }}>
+            Hint {i + 1}
+          </span>
+          <p style={{ fontSize: 13, marginTop: 4, lineHeight: 1.5 }}>{hints[i]}</p>
         </div>
       ))}
 

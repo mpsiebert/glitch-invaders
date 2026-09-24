@@ -46,3 +46,10 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+[data-theme="mlh"] .animate-glitch-loop,
+[data-theme="mlh"] .animate-glitch {
+  animation: none !important;
+  text-shadow: 3px 3px 0px #d92b2b !important;
+  clip-path: none !important;
+}

@@ -207,7 +207,7 @@
 }
 
 [data-theme="mlh"] .hint-reveal {
-  background: #fff8e6; border: 2px solid #111118; color: #111118; box-shadow: 3px 3px 0px #f5a623;
+  background: #fffdf5; border: 3px solid #111118; color: #111118; box-shadow: 4px 4px 0px #111118; border-radius: 4px; padding: 14px 16px;
 }
 
 [data-theme="mlh"] .bounty-dot {
